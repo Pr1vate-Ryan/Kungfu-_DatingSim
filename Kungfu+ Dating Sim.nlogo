@@ -98,9 +98,11 @@ to check-periodic-breakups
       set partner nobody
       set color gray + 2
       
-      ask ex-partner [
-        set partner nobody
-        set color gray + 2
+      if ex-partner != nobody [  ;; Safety check
+        ask ex-partner [
+          set partner nobody
+          set color gray + 2
+        ]
       ]
     ]
   ]
@@ -111,6 +113,11 @@ to check-meeting-breakups
   let singles turtles with [partner = nobody]
   
   ask singles [
+    ;; Safety check - ensure we're a valid turtle
+    if self = nobody [ stop ]
+    
+    let single-turtle self  ;; Store reference to self
+    
     ;; Check nearby turtles in a partnership
     let nearby-paired other turtles in-radius 1 with [partner != nobody]
     
@@ -119,10 +126,13 @@ to check-meeting-breakups
       if random-float 1 < 0.2 [
         ;; Store current partner before breaking up
         let current-partner partner
-        let single-turtle myself
         
-        ;; Break up with current partner
+        ;; Safety check for partner
+        if current-partner = nobody [ stop ]
+        
+        ;; Break up with current partner - do this first
         set partner nobody
+        set color gray + 2
         
         ask current-partner [
           set partner nobody
@@ -130,18 +140,18 @@ to check-meeting-breakups
         ]
         
         ;; 50% chance to partner with the single turtle that caused breakup
-        ifelse random-float 1 < 0.5 [
-          set partner single-turtle
-          set color red
-          
-          ask single-turtle [
-            set partner myself
+        if random-float 1 < 0.5 [
+          if single-turtle != nobody [  ;; Safety check
+            set partner single-turtle
             set color red
+            
+            ask single-turtle [
+              set partner myself
+              set color red
+            ]
           ]
-        ] [
-          ;; No new partnership, return to single status
-          set color gray + 2
         ]
+        ;; No need for else branch - already set color and partner above
       ]
     ]
   ]
